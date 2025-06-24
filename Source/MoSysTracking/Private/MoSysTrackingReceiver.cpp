@@ -6,6 +6,8 @@
 #include "MoSysTrackingPrivate.h"
 
 #include "Misc/CoreDelegates.h"
+#include "ILiveLinkClient.h"
+#include "LiveLinkClient.h"
 
 #define BUFFER_CAPACITY            64
 #define INVALID_FRAME_NUMBER    -1
@@ -22,23 +24,32 @@ FMoSysTrackingReceiver::FMoSysTrackingReceiver(FName InSubjectName, FString InPo
     , Worker(mosys::tracking::Worker::createWorker(InMode, InProtocol))
     , LastFrameNumber(INVALID_FRAME_NUMBER)
     , MessageKey(InMessageKey)
+    , bLogOnce(true)
 {
     if (FPlatformProcess::SupportsMultithreading())
     {
         // Ensure a unique name
         FString Timestamp = FString::FromInt(FDateTime::UtcNow().ToUnixTimestamp());
-        ThreadName = "MoSysTrackingReceiver:" + Port + ":" + Timestamp;
-
-        // Windows default = 8MB stack for thread
-        Thread.Reset(FRunnableThread::Create(this, *ThreadName, 0, TPri_TimeCritical));
+        FString ThreadName = "MoSysTrackingReceiver:" + Port + ":" + Timestamp;
+        Thread = FRunnableThread::Create(this, *ThreadName, 0, TPri_TimeCritical); // Windows default = 8MB stack for thread
     }
 
+    bEnginePreExit = false;
     FCoreDelegates::OnPreExit.AddRaw(this, &FMoSysTrackingReceiver::OnPreExit);
 }
 
 FMoSysTrackingReceiver::~FMoSysTrackingReceiver()
 {
-    Stop();
+    if (Thread != nullptr)
+    {
+        Stop();
+        Thread = nullptr;
+    }
+    if (Worker != nullptr)
+    {
+        delete Worker;
+        Worker = nullptr;
+    }
 }
 
 bool FMoSysTrackingReceiver::Init()
@@ -143,11 +154,6 @@ uint32 FMoSysTrackingReceiver::Run()
             }
             else
             {
-                if (bRequestedThreadExit)
-                {
-                    break;
-                }
-                
                 if (WaitingStatusCallback != nullptr)
                 {
                     WaitingStatusCallback(SubjectName);
@@ -165,11 +171,6 @@ uint32 FMoSysTrackingReceiver::Run()
         }
         else
         {
-            if (bRequestedThreadExit)
-            {
-                break;
-            }
-            
             ReceivingCounter.Reset();
             SetLastErrorMessage("Mo-Sys background receiver worker is not ready");
             if (!Worker->connect())
@@ -189,19 +190,17 @@ void FMoSysTrackingReceiver::Stop()
 {
     RunningCounter.Reset();
     ReceivingCounter.Reset();
-    bRequestedThreadExit = true;
 
-    if (Worker)
-    {
-        Worker->stop();
-    }
-
-    if (Thread)
+    if (Thread != nullptr)
     {
         Thread->WaitForCompletion();
+        Thread = nullptr;
     }
-
-    Worker.Reset();
+    if (Worker != nullptr)
+    {
+        Worker->stop();
+        Worker = nullptr;
+    }
 }
 
 bool FMoSysTrackingReceiver::IsRunning()
@@ -225,9 +224,8 @@ void FMoSysTrackingReceiver::SetLastErrorMessage(FString message, bool Log)
 {
     if (Log)
     {
-        UE_LOG(LogMoSysTracking, Error, TEXT("Mo-Sys background thread (%s) error: %s"), *ThreadName, *message);
+        UE_LOG(LogMoSysTracking, Error, TEXT("Mo-Sys background thread error: %s"), *message);
     }
-
     MessageSection.Lock();
     {
         if (message.Len() > 0)

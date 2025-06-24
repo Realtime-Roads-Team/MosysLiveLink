@@ -1,0 +1,22 @@
+{
+	"OutputFiles": [
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\Module.MoSysTracking.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoRail.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysEncoderComponent.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLensNDisplayComponent.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkComponentController.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkController.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkFrameInterpolationProcessor.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkRole.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkSerialSource.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkSource.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkSourceFactory.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkSourceSettings.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkSubjectSettings.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysLiveLinkUDPSource.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysTracking.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysTrackingReceiver.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\MoSysTrackingReceiverManager.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysTracking\\SMoSysLiveLinkSourceFactory.cpp.obj"
+	]
+}

@@ -24,7 +24,6 @@ public:
 	void UpdateWorldContextObject(TWeakObjectPtr<UObject> InWorldContextObject);
 	void SetOverrideOverscanFactor(float OverscanFactorOverride);
 	void SetApplyOverscanToFOV(bool bInApplyOverscanToFOV);
-	void SetApplyEPDToFocalDistance(bool bInApplyEPDToFocalDistance);
 	void SetIsRendering(bool IsRendering);
 	void SetApplyOverscanToPostProcess(bool ApplyOverscanToPostProcess) { bApplyOverscanToPostProcess = ApplyOverscanToPostProcess; }
 	void HandleRenderSettings(const FMoSysRenderSettings& RenderSettings);
@@ -83,7 +82,6 @@ private:
 
 	bool bApplyOverscanToFOV = true;
 	bool bApplyOverscanToPostProcess = false;
-	bool bApplyEPDToFocalDistance = true;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UTextureRenderTarget2D> MoSysCalibrationLayerRT = nullptr;

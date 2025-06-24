@@ -60,11 +60,6 @@ void UMoSysLensDistortionModelHandler::SetApplyOverscanToFOV(bool bInApplyOversc
 	bApplyOverscanToFOV = bInApplyOverscanToFOV;
 }
 
-void UMoSysLensDistortionModelHandler::SetApplyEPDToFocalDistance(bool bInApplyEPDToFocalDistance)
-{
-	bApplyEPDToFocalDistance = bInApplyEPDToFocalDistance;
-}
-
 void UMoSysLensDistortionModelHandler::SetHomographyOverscanFactor(float InHomographyOverscanFactor)
 {
     HomographyOverscanFactor = InHomographyOverscanFactor;
@@ -175,10 +170,6 @@ void UMoSysLensDistortionModelHandler::UpdateCameraLensOnTick(bool ShouldUpdateF
 	}
 	FCameraFocusSettings FocusSettings;
 	FocusSettings.ManualFocusDistance = 100.f / LastRecipFocalDistance; // m >> cm
-	if (bApplyEPDToFocalDistance)
-	{
-		FocusSettings.ManualFocusDistance -= GetEPD() * 100.f;
-	}
 	CineCameraComponent->FocusSettings = FocusSettings;
 
 	/* Temporarily disable setting aperture until fully implemented

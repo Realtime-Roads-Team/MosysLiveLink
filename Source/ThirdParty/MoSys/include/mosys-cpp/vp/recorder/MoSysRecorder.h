@@ -67,7 +67,7 @@ namespace mosys
                 virtual RecorderSettings getSettings() { return m_settings; }
 
             protected:
-                std::thread* m_thread = nullptr;
+                std::thread* m_thread;
                 std::mutex m_mutex;
                 std::condition_variable m_condition;
                 RecorderCallback m_notifyCallback;

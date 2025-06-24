@@ -179,13 +179,10 @@ void FMoSysLiveLinkUDPSource::CreateSubject(FName SubjectName)
 void FMoSysLiveLinkUDPSource::RemoveSubject(FName SubjectName)
 {
     FMoSysLiveLinkSource::RemoveSubject(SubjectName);
-    if (LiveLinkClient)
+    auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({ Guid, SubjectName });
+    UMoSysUDPSubjectSettings *SubjectSettings = Cast<UMoSysUDPSubjectSettings>(LiveLinkSubjectSettings);
+    if (SubjectSettings)
     {
-        auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({ Guid, SubjectName });
-        UMoSysUDPSubjectSettings* SubjectSettings = Cast<UMoSysUDPSubjectSettings>(LiveLinkSubjectSettings);
-        if (SubjectSettings)
-        {
-            RemovePort(SubjectSettings->Port);
-        }
+        RemovePort(SubjectSettings->Port);
     }
 }

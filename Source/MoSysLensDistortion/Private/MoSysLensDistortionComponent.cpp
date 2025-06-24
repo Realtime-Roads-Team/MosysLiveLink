@@ -19,8 +19,6 @@ UMoSysLensDistortionComponent::UMoSysLensDistortionComponent()
 	FWorldDelegates::OnWorldPostActorTick.AddUObject(this, &UMoSysLensDistortionComponent::OnPostActorTick);
 
 	OverscanFactorOverride = 0.f;
-	// introduced in ue5.5, disable to keep the old behavior
-	bOverrideCameraOverscan = false;
 }
 
 void UMoSysLensDistortionComponent::BeginPlay()
@@ -98,7 +96,6 @@ void UMoSysLensDistortionComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	{
 		LensDistortionHandler->SetOverrideOverscanFactor(OverscanFactorOverride);
 		LensDistortionHandler->SetApplyOverscanToFOV(bApplyOverscanToFOV);
-		LensDistortionHandler->SetApplyEPDToFocalDistance(bApplyEPDToFocalDistance);
 		LensDistortionHandler->UpdateCameraLensOnTick(ShouldUpdateFilmback);
 		LensDistortionHandler->SetIsSpawned(bIsSpawned);
 		if (!bIsSpawned)

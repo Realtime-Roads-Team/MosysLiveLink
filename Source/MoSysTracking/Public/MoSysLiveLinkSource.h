@@ -29,19 +29,11 @@ public:
     /* ~End ILiveLinkSource Interface*/
 
     /**
-     * Called from MoSysLiveLinkSourceDetails when add/delete button is triggered or when user presses delete
-     * in the list of LiveLink sources.
-     * Derived classes need to implement these to handle how each type would handle adding/removing a subject. 
+     * Called from MoSysLiveLinkSourceDetails when add/delete button is triggered.
+     * Derived classes need to inherit this to handle how each type would handle adding/removing a subject. 
      */
     virtual void CreateSubject(FName SubjectName) = 0;
     virtual void RemoveSubject(FName SubjectName);
-
-    /**
-     * Called when the delete button is clicked.
-     * 
-     * \param SubjectName Name of subect to remove.
-     */
-    virtual void RemoveSubjectClicked(FName SubjectName);
 
     /**
      * This method is bound to OnMoSysSubjectAdded delegate. This must be overidden and implemented in
@@ -49,8 +41,6 @@ public:
      */
     virtual void OnSubjectCreated(FLiveLinkSubjectKey SubjectKey) = 0;
     virtual bool StartWorker(FName SubjectName, FString Parameter);
-
-    void OnSubjectRemoved(FLiveLinkSubjectKey SubjectKey);
 
     /**
      * Called on RequestSourceShutdown. Iterates through map of receivers and safely deletes their values.
@@ -115,5 +105,5 @@ protected:
 private:
     /** Bind on ReceiveClient and RequestSourceShutdown. */
     FDelegateHandle OnMoSysSubjectAdded;
-    FDelegateHandle OnMoSysSubjectRemoved;
+    FDelegateHandle OnMoSysSubjectDeleted;
 };

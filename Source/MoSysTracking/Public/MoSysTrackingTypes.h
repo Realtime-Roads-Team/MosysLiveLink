@@ -1,12 +1,12 @@
-// Copyright 2025 Mo-Sys Engineering Ltd. All Rights Reserved.
+// Copyright 2023 Mo-Sys Engineering Ltd. All Rights Reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Roles/LiveLinkBasicTypes.h"
 #include "Roles/LiveLinkTransformTypes.h"
 
 #include "MoSysLensModel.h"
-#include "MoSysTimecodeWrapper.h"
 
 #include "MoSysTrackingTypes.generated.h"
 
@@ -126,23 +126,23 @@ struct MOSYSTRACKING_API FLiveLinkMoSysFrameData : public FLiveLinkTransformFram
 {
     GENERATED_BODY()
 
-    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking")
+    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking", Interp)
     FMoSysLensParameters Lens;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking")
     EMoSysTrackingStatus TrackingStatus;
 
-    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking")
+    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking", Interp)
     int32 RawFocus = 0;
 
-    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking")
+    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking", Interp)
     int32 RawZoom = 0;
 
-    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking")
+    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking", Interp)
     int32 RawIris = 0;
 
-    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking")
-    FMoSysTimecodeWrapper Timecode;
+    UPROPERTY(Interp, VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking", Interp)
+    FTimecode Timecode;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mo-Sys|Tracking")
     int32 CameraID;

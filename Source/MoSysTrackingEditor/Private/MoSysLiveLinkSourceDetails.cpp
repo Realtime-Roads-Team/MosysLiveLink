@@ -46,7 +46,7 @@ void FMoSysLiveLinkSourceDetails::CustomizeDetails(IDetailLayoutBuilder & Detail
     {
         if (IMoSysTracking::Get().GetOrAddSource(SourceMode) != nullptr)
         {
-            IMoSysTracking::Get().GetOrAddSource(SourceMode)->RemoveSubjectClicked(SubjectName);
+            IMoSysTracking::Get().GetOrAddSource(SourceMode)->RemoveSubject(SubjectName);
         }
         return FReply::Handled();
     };

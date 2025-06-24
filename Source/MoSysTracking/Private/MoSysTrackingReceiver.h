@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Containers/CircularQueue.h"
 #include "HAL/Runnable.h"
 #include "HAL/RunnableThread.h"
 #include "Misc/Timecode.h"
@@ -18,7 +19,7 @@ class FMoSysTrackingReceiver : public IMoSysTrackingReceiver, public TSharedFrom
 public:
     friend FMoSysTrackingReceiverManager;
 
-    virtual ~FMoSysTrackingReceiver() override;
+    virtual ~FMoSysTrackingReceiver();
 
     /** Thread-safe access to the status for the LiveLink UI */
     void GetStatus(FText &OutStatus) override;
@@ -35,16 +36,17 @@ public:
     /** True if receiving data */
     bool IsReceiving() override;
 
+    //todo review if string status is necessary
+    int32 TrackingStatus;
+
+
     void OnPreExit();
 private:
 
     FMoSysTrackingReceiver(FName InSubjectName, FString InPort, mosys::tracking::CommunicationMode InMode, mosys::tracking::Protocol InProtocol, uint64 InMessageKey, ReceiverHandleFrameCallback InHandleFrameCallback, ReceiverReadFrameFailedCallback InHandleFailedFrameCallback, FString InIpAddress);
 
     /** Thread to run the worker FRunnable on */
-    TUniquePtr<FRunnableThread> Thread;
-
-    /** Name of background thread running. */
-    FString ThreadName;
+    FRunnableThread* Thread;
 
     /** Critical section for status text lock */
     FCriticalSection StatusSection;
@@ -55,10 +57,8 @@ private:
     /** Thread-safe running counter */
     FThreadSafeCounter RunningCounter;
 
-    /** Used to exit early from running background thread. */
-    std::atomic_bool bRequestedThreadExit = false;
-
     /** Thread-safe engine shutdown status */
+    // FThreadSafeBool deprecated
     std::atomic_bool bEnginePreExit = false;
 
     ReceiverHandleFrameCallback HandleFrameCallback;
@@ -78,7 +78,7 @@ private:
     FString IpAddress;
 
     /** The Mo-Sys Tracking API read worker */
-    TUniquePtr<mosys::tracking::Worker> Worker;
+    mosys::tracking::Worker *Worker;
 
     /** The last frame number received */
     int LastFrameNumber;
@@ -96,9 +96,10 @@ private:
 
     /** Gets rid of the noisy error message log */
     // FThreadSafeBool deprecated
-    std::atomic_bool bLogOnce = true;
+    std::atomic_bool bLogOnce;
 
-protected:
+public:
+
     // Begin FRunnable interface.
     virtual bool Init() override;
     virtual uint32 Run() override;

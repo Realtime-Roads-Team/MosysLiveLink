@@ -60,7 +60,7 @@ public:
 	FMoSysLiveLinkSerialSourceDetails() : FMoSysLiveLinkSourceDetails(EMoSysSourceMode::SerialMode)
 	{
 		MoSysHardwares.Add(MakeShareable(new FString("StarTracker")));
-		MoSysHardwares.Add(MakeShareable(new FString("Virtual Pan Bar / Handwheels")));
+		MoSysHardwares.Add(MakeShareable(new FString("Encoder")));
 		MoSysHardwares.Add(MakeShareable(new FString("Handwheels")));
 		MoSysHardwares.Add(MakeShareable(new FString("PanTiltHead")));
         MoSysHardwares.Add(MakeShareable(new FString("Radio")));

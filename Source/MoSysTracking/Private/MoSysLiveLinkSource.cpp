@@ -15,18 +15,14 @@ void FMoSysLiveLinkSource::ReceiveClient(ILiveLinkClient * InClient, FGuid InSou
     LiveLinkClient = static_cast<FLiveLinkClient*>(InClient);
     Guid = InSourceGuid;
     
-    if (!OnMoSysSubjectAdded.IsValid())
+    if(!OnMoSysSubjectAdded.IsValid())
     {
         OnMoSysSubjectAdded = LiveLinkClient->OnLiveLinkSubjectAdded().AddRaw(this, &FMoSysLiveLinkSource::OnSubjectCreated);
-        ULiveLinkSourceSettings* Settings = Cast<ULiveLinkSourceSettings>(LiveLinkClient->GetSourceSettings(Guid));
+        ULiveLinkSourceSettings *Settings = Cast<ULiveLinkSourceSettings>(LiveLinkClient->GetSourceSettings(Guid));
         if (Settings && Settings->Mode == ELiveLinkSourceMode::Timecode)
         {
             Settings->BufferSettings.DetectedFrameRate = IMoSysTracking::Get().GetMoSysVPFrameRate();
         }
-    }
-    if (!OnMoSysSubjectRemoved.IsValid())
-    {
-        OnMoSysSubjectRemoved = LiveLinkClient->OnLiveLinkSubjectRemoved().AddRaw(this, &FMoSysLiveLinkSource::OnSubjectRemoved);
     }
 }
 
@@ -42,10 +38,8 @@ bool FMoSysLiveLinkSource::RequestSourceShutdown()
         if (LiveLinkClient)
         {
             LiveLinkClient->OnLiveLinkSubjectAdded().Remove(OnMoSysSubjectAdded);
-            LiveLinkClient->OnLiveLinkSubjectRemoved().Remove(OnMoSysSubjectRemoved);
         }
         OnMoSysSubjectAdded.Reset();
-        OnMoSysSubjectRemoved.Reset();
     }
     LiveLinkClient = nullptr;
     Guid.Invalidate();
@@ -76,10 +70,6 @@ void FMoSysLiveLinkSource::RemoveSubject(FName SubjectName)
         }
         EncounteredReceivers.Remove(SubjectName);
     }
-}
-
-void FMoSysLiveLinkSource::RemoveSubjectClicked(FName SubjectName)
-{
     if (!SubjectName.IsNone())
     {
         LiveLinkClient->RemoveSubject_AnyThread({ Guid, SubjectName });
@@ -113,11 +103,6 @@ bool FMoSysLiveLinkSource::StartWorker(FName SubjectName, FString Parameter)
 
     UE_LOG(LogMoSysTracking, Warning, TEXT("Receiver not initialised!"));
     return false;
-}
-
-void FMoSysLiveLinkSource::OnSubjectRemoved(FLiveLinkSubjectKey SubjectKey)
-{
-    RemoveSubject(SubjectKey.SubjectName);
 }
 
 void FMoSysLiveLinkSource::Clean()

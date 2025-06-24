@@ -35,7 +35,6 @@ namespace mosys
         enum RecorderType
         {
             Hyperdeck = 0,
-            KiPro = 1,
             Dummy // for testing purposes for now
         };
 

@@ -131,7 +131,7 @@ namespace mosys
              * @param message the error message
              * return true if an error occured
              */
-            bool getLastErrorMessage(std::string &message) const;
+            bool getLastErrorMessage(std::string &message);
 
             /**
              * get the network mode this worker was created with

@@ -83,9 +83,6 @@ public:
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mo-Sys|LensDistortion")
     bool bApplyOverscanToFOV = true;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mo-Sys|LensDistortion", meta= (DisplayName = "Apply EPD to Focal Distance"))
-    bool bApplyEPDToFocalDistance = true;
-
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mo-Sys|LensDistortion")
     float OverscanFactorOverride;
 

@@ -1,0 +1,10 @@
+{
+	"BuildId": "37670630",
+	"Modules": 
+	{
+		"MoSysAPI": "UnrealEditor-MoSysAPI.dll",
+		"MoSysLensDistortion": "UnrealEditor-MoSysLensDistortion.dll",
+		"MoSysTracking": "UnrealEditor-MoSysTracking.dll",
+		"MoSysTrackingEditor": "UnrealEditor-MoSysTrackingEditor.dll"
+	}
+}

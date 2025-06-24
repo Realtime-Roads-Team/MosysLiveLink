@@ -24,8 +24,7 @@ namespace mosys
             CT_Arri = 0,
             CT_Sony,
             CT_Red,
-            CT_Canon,
-            CT_Blackmagic
+            CT_Canon
         };
 
         /**
@@ -57,9 +56,8 @@ namespace mosys
              * \param password The password of the camera to authenticate the connection. This should be passed in from the engine calling this code.
              * \param connectCallback This will be called at the end and tell the engine what happened with the camera, whether it connected successfully or not.
              * \param slowMode The current mode of the camera. Slow mode indicates the camera is slower at responding to requests. Typically takes longer to respond with current Timecode.
-             * \param portIn Port to use. To use the (camera type specific) default port, pass 0.
              */
-            void connectCamera(CameraType type, const std::string& address, const std::string& password, const CameraConnectedCallback& connectCallback, bool slowMode = false, uint16_t portIn = 0);
+            void connectCamera(CameraType type, const std::string& address, const std::string& password, const CameraConnectedCallback& connectCallback, bool slowMode = false);
             /**
              * \brief Tells all cameras to start recording
              * \return True if we set the cameras to record, false if there was a failure or no cameras are available to record
