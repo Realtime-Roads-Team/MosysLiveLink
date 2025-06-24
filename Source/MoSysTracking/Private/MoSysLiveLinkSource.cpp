@@ -10,23 +10,30 @@
 
 #define LOCTEXT_NAMESPACE "MoSysTrackingSource"
 
-void FMoSysLiveLinkSource::ReceiveClient(ILiveLinkClient * InClient, FGuid InSourceGuid)
+void FMoSysLiveLinkSource::ReceiveClient(ILiveLinkClient* InClient, FGuid InSourceGuid)
 {
     LiveLinkClient = static_cast<FLiveLinkClient*>(InClient);
     Guid = InSourceGuid;
-    
+
     if (!OnMoSysSubjectAdded.IsValid())
     {
-        OnMoSysSubjectAdded = LiveLinkClient->OnLiveLinkSubjectAdded().AddRaw(this, &FMoSysLiveLinkSource::OnSubjectCreated);
-        ULiveLinkSourceSettings* Settings = Cast<ULiveLinkSourceSettings>(LiveLinkClient->GetSourceSettings(Guid));
+        OnMoSysSubjectAdded = LiveLinkClient->OnLiveLinkSubjectAdded().AddRaw(this,
+                                                                              &FMoSysLiveLinkSource::OnSubjectCreated);
+
+        TObjectPtr<ULiveLinkSourceSettings> Settings = Cast<ULiveLinkSourceSettings>(
+            LiveLinkClient->GetSourceSettings(Guid));
+
         if (Settings && Settings->Mode == ELiveLinkSourceMode::Timecode)
         {
             Settings->BufferSettings.DetectedFrameRate = IMoSysTracking::Get().GetMoSysVPFrameRate();
         }
     }
+
     if (!OnMoSysSubjectRemoved.IsValid())
     {
-        OnMoSysSubjectRemoved = LiveLinkClient->OnLiveLinkSubjectRemoved().AddRaw(this, &FMoSysLiveLinkSource::OnSubjectRemoved);
+        OnMoSysSubjectRemoved = LiveLinkClient->OnLiveLinkSubjectRemoved().AddRaw(
+            this,
+            &FMoSysLiveLinkSource::OnSubjectRemoved);
     }
 }
 
@@ -44,12 +51,15 @@ bool FMoSysLiveLinkSource::RequestSourceShutdown()
             LiveLinkClient->OnLiveLinkSubjectAdded().Remove(OnMoSysSubjectAdded);
             LiveLinkClient->OnLiveLinkSubjectRemoved().Remove(OnMoSysSubjectRemoved);
         }
+
         OnMoSysSubjectAdded.Reset();
         OnMoSysSubjectRemoved.Reset();
     }
+
     LiveLinkClient = nullptr;
     Guid.Invalidate();
     Clean();
+
     return true;
 }
 
@@ -63,17 +73,15 @@ FText FMoSysLiveLinkSource::GetSourceStatus() const
     return LOCTEXT("MoSysHardwareLiveLinkStatus", "Active");
 }
 
-void FMoSysLiveLinkSource::RemoveSubject(FName SubjectName)
+void FMoSysLiveLinkSource::RemoveSubject(const FName& SubjectName)
 {
     if (EncounteredReceivers.Contains(SubjectName))
     {
-        IMoSysTrackingReceiver *Receiver = EncounteredReceivers[SubjectName];
-        if (Receiver)
+        if (EncounteredReceivers[SubjectName].IsValid())
         {
-            Receiver->Stop();
-            delete Receiver;
-            Receiver = nullptr;
+            EncounteredReceivers[SubjectName]->Stop();
         }
+
         EncounteredReceivers.Remove(SubjectName);
     }
 }
@@ -82,37 +90,13 @@ void FMoSysLiveLinkSource::RemoveSubjectClicked(FName SubjectName)
 {
     if (!SubjectName.IsNone())
     {
-        LiveLinkClient->RemoveSubject_AnyThread({ Guid, SubjectName });
+        LiveLinkClient->RemoveSubject_AnyThread({Guid, SubjectName});
     }
 }
 
-bool FMoSysLiveLinkSource::StartWorker(FName SubjectName, FString Parameter)
+bool FMoSysLiveLinkSource::StartWorker(const FName& SubjectName, const FString& Parameter)
 {
-    auto HandleSubjectFrameCallback = std::bind(&FMoSysLiveLinkSource::HandleSubjectFrame, this, std::placeholders::_1, std::placeholders::_2);
-    auto WaitingTrackingStatusCallback = std::bind(&FMoSysLiveLinkSource::SetWaitingTrackingStatus, this, std::placeholders::_1);
-    int32 Port = FCString::Atoi(*Parameter);
-    IMoSysTrackingReceiver *Receiver = nullptr;
-    if (SubjectName == "Radio")
-    {
-        Receiver = CreateReceiver(SubjectName, Port, mosys::tracking::Protocol::TrackerLite, HandleSubjectFrameCallback, WaitingTrackingStatusCallback);
-    }
-    else
-    {
-        Receiver = CreateReceiver(SubjectName, Port, mosys::tracking::Protocol::F4, HandleSubjectFrameCallback, WaitingTrackingStatusCallback);
-    }
-    if (Receiver)
-    {
-        FLiveLinkStaticDataStruct StaticDataStruct = FLiveLinkStaticDataStruct(FLiveLinkMoSysStaticData::StaticStruct());
-        if (LiveLinkClient)
-        {
-            LiveLinkClient->PushSubjectStaticData_AnyThread({ Guid, SubjectName }, UMoSysLiveLinkRole::StaticClass(), MoveTemp(StaticDataStruct));
-        }
-        EncounteredReceivers.Add(SubjectName, Receiver);
-        return true;
-    }
-
-    UE_LOG(LogMoSysTracking, Warning, TEXT("Receiver not initialised!"));
-    return false;
+    return true;
 }
 
 void FMoSysLiveLinkSource::OnSubjectRemoved(FLiveLinkSubjectKey SubjectKey)
@@ -122,21 +106,19 @@ void FMoSysLiveLinkSource::OnSubjectRemoved(FLiveLinkSubjectKey SubjectKey)
 
 void FMoSysLiveLinkSource::Clean()
 {
-    for (auto Receiver : EncounteredReceivers)
+    for (const auto&  Pair: EncounteredReceivers)
     {
-        IMoSysTrackingReceiver *TrackingReceiver = Receiver.Value;
-        if (TrackingReceiver)
+        if (Pair.Value.IsValid())
         {
-            TrackingReceiver->Stop();
-            delete TrackingReceiver;
-            TrackingReceiver = nullptr;
+            Pair.Value->Stop();
         }
     }
+
     OccupiedPorts.Empty();
     EncounteredReceivers.Empty();
 }
 
-bool FMoSysLiveLinkSource::ChangePort(FName SubjectName, int32 & OutCurrentPort, int32 TargetPort)
+bool FMoSysLiveLinkSource::ChangePort(const FName& SubjectName, int32& OutCurrentPort, int32 TargetPort)
 {
     if (!OccupiedPorts.Contains(TargetPort))
     {
@@ -145,39 +127,39 @@ bool FMoSysLiveLinkSource::ChangePort(FName SubjectName, int32 & OutCurrentPort,
 
         if (EncounteredReceivers.Contains(SubjectName) || EncounteredReceivers.Num() != 0)
         {
-            IMoSysTrackingReceiver *TrackingReceiver = EncounteredReceivers[SubjectName];
-            if (TrackingReceiver != nullptr)
+            if (EncounteredReceivers[SubjectName].IsValid())
             {
-                TrackingReceiver->Stop();
-                delete TrackingReceiver;
-                TrackingReceiver = nullptr;
+                EncounteredReceivers[SubjectName]->Stop();
                 EncounteredReceivers.Remove(SubjectName);
                 return StartWorker(SubjectName, FString::FromInt(TargetPort));
             }
         }
     }
+
     return false;
 }
 
-void FMoSysLiveLinkSource::HandleSubjectFrame(FName SubjectName, FLiveLinkMoSysFrameData Frame)
+void FMoSysLiveLinkSource::HandleSubjectFrame(const FName& SubjectName, const FLiveLinkMoSysFrameData& Frame)
 {
     if (EncounteredReceivers.Contains(SubjectName) && EncounteredReceivers[SubjectName] != nullptr)
     {
         FLiveLinkFrameDataStruct FrameDataStruct = FLiveLinkFrameDataStruct(FLiveLinkMoSysFrameData::StaticStruct());
         FrameDataStruct.InitializeWith(&Frame);
-        
+
         EncounteredReceivers[SubjectName]->TrackingStatus = Frame.TrackingStatus;
         if (LiveLinkClient)
         {
-            TObjectPtr<UObject>LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({ Guid, SubjectName });
-            UMoSysLiveLinkSubjectSettings *SubjectSettings = Cast<UMoSysLiveLinkSubjectSettings>(LiveLinkSubjectSettings);
+            TObjectPtr<UObject> LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({Guid, SubjectName});
+            UMoSysLiveLinkSubjectSettings* SubjectSettings = Cast<UMoSysLiveLinkSubjectSettings>(
+                LiveLinkSubjectSettings);
 
             if (SubjectSettings)
             {
-                SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(Frame.TrackingStatus);
+                SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(
+                    Frame.TrackingStatus);
             }
 
-            LiveLinkClient->PushSubjectFrameData_AnyThread({ Guid, SubjectName }, MoveTemp(FrameDataStruct));
+            LiveLinkClient->PushSubjectFrameData_AnyThread({Guid, SubjectName}, MoveTemp(FrameDataStruct));
         }
     }
 }
@@ -186,17 +168,17 @@ void FMoSysLiveLinkSource::SetWaitingTrackingStatus(FName SubjectName)
 {
     if (LiveLinkClient)
     {
-        TObjectPtr<UObject>LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({ Guid, SubjectName });
-        UMoSysLiveLinkSubjectSettings *SubjectSettings = Cast<UMoSysLiveLinkSubjectSettings>(LiveLinkSubjectSettings);
+        TObjectPtr<UObject> LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({Guid, SubjectName});
 
-        if (SubjectSettings)
+        if (const auto SubjectSettings = Cast<UMoSysLiveLinkSubjectSettings>(LiveLinkSubjectSettings))
         {
-            SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(EMoSysTrackingStatus::Waiting);
+            SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(
+                EMoSysTrackingStatus::Waiting);
         }
     }
 }
 
-bool FMoSysLiveLinkSource::AddPort(int32 & OutAvailablePort, int32 TargetPort)
+bool FMoSysLiveLinkSource::AddPort(int32& OutAvailablePort, int32 TargetPort)
 {
     int32 AvailablePort = DefaultAvailablePort;
     if (TargetPort != -1)

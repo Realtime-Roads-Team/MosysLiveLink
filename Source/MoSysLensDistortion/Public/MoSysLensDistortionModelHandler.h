@@ -27,6 +27,7 @@ public:
 	void SetApplyEPDToFocalDistance(bool bInApplyEPDToFocalDistance);
 	void SetIsRendering(bool IsRendering);
 	void SetApplyOverscanToPostProcess(bool ApplyOverscanToPostProcess) { bApplyOverscanToPostProcess = ApplyOverscanToPostProcess; }
+	void SetIsCameraActive(bool IsCameraActive);
 	void HandleRenderSettings(const FMoSysRenderSettings& RenderSettings);
 	void SetHomographyOverscanFactor(float InHomographyOverscanFactor);
 	FVector2D GetLastFocalLength() const;
@@ -43,6 +44,12 @@ protected:
 	virtual void InitDistortionMaterials() override;
 	virtual void UpdateMaterialParameters() override;
 	virtual void InterpretDistortionParameters() override;
+
+	// \todo - UE5.6 update - properly implement this.
+	virtual FVector2D ComputeUndistortedUV(const FVector2D& InScreenUV) const override
+	{
+		return {0.0f, 0.0f};
+	}
 	//~ End ULensDistortionModelHandlerBase interface
 
 public:
@@ -52,6 +59,11 @@ public:
 	FVector2D LensUndistortViewportUVIntoViewSpace(float TanHalfDistortedHorizontalFOV, FVector2D DistortedViewportUV) const;
 	/** Undistorts 3d vector (x, y, z=1.f) in the view space and returns (x', y', z'=1.f). */
 	FVector2D UndistortNormalizedViewPosition(FVector2D V) const;
+
+	TObjectPtr<UTextureRenderTarget2D> GetMoSysDisplacementMapRT();
+	TObjectPtr<UTextureRenderTarget2D> GetMoSysUndisplacementMapRT();
+	// Checks if static region geometry correction is enabled, and if so, renders the distortion displacement map to a render target
+	void RenderDistortionDisplacementMapIfNeeded();
 
 private:
 	FVector2D ComputeDistortedUVWithoutCxCy(const FVector2D& InUndistortedUV) const;
@@ -94,11 +106,14 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UTextureRenderTarget2D> MoSysUndisplacementMapRT = nullptr;
 
+	UPROPERTY(Transient)
+	TObjectPtr<class UMaterialParameterCollection> CompositorMaterialParameterCollection = nullptr;
+
 	bool bIsRendering = false;
 	float bEnableDistortion = true;
 	float MRQCameraOverscanPercentage = 0.f;
 	bool bDrawDistortSTMapMaterial = false;
 	bool bDrawUndistortSTMapMaterial = false;
 	bool bDrawCalibrationLayerMaterial = false;
-
+	bool bIsCameraActive = false;
 };

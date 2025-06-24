@@ -4,7 +4,10 @@
 #include "CoreMinimal.h"
 #include "ILiveLinkSource.h"
 #include "LiveLinkClient.h"
+
 #include "MoSysTrackingReceiverManager.h"
+
+#include "mosys-cpp/networking/interfaces/IEndpointInfo.h"
 
 /**
  * Abstract base class for Mo-Sys Live Link Sources
@@ -13,7 +16,7 @@ class FMoSysLiveLinkSource : public ILiveLinkSource
 {
 public:
     FMoSysLiveLinkSource() = default;
-    ~FMoSysLiveLinkSource() = default;
+    virtual ~FMoSysLiveLinkSource() override = default;
 
     /* ~Begin ILiveLinkSource Interface*/
     virtual void ReceiveClient(ILiveLinkClient* InClient, FGuid InSourceGuid) override;
@@ -24,7 +27,7 @@ public:
     virtual FText GetSourceType() const override = 0;
     virtual FText GetSourceMachineName() const override;
     virtual FText GetSourceStatus() const override;
-    
+
     virtual TSubclassOf<ULiveLinkSourceSettings> GetSettingsClass() const override = 0;
     /* ~End ILiveLinkSource Interface*/
 
@@ -34,12 +37,12 @@ public:
      * Derived classes need to implement these to handle how each type would handle adding/removing a subject. 
      */
     virtual void CreateSubject(FName SubjectName) = 0;
-    virtual void RemoveSubject(FName SubjectName);
+    virtual void RemoveSubject(const FName& SubjectName);
 
     /**
      * Called when the delete button is clicked.
      * 
-     * \param SubjectName Name of subect to remove.
+     * \param SubjectName Name of subject to remove.
      */
     virtual void RemoveSubjectClicked(FName SubjectName);
 
@@ -48,7 +51,7 @@ public:
      * derived classes using their own subject settings to correctly start the worker for their source type.
      */
     virtual void OnSubjectCreated(FLiveLinkSubjectKey SubjectKey) = 0;
-    virtual bool StartWorker(FName SubjectName, FString Parameter);
+    virtual bool StartWorker(const FName& SubjectName, const FString& Parameter);
 
     void OnSubjectRemoved(FLiveLinkSubjectKey SubjectKey);
 
@@ -65,7 +68,7 @@ public:
      * @param TargetPort - The port the user wishes to change to.
      * @return true if succesfully changed to TargetPort, false otherwise and return unchanged OutCurrentPort.
      */
-    bool ChangePort(FName SubjectName, int32 &OutCurrentPort, int32 TargetPort);
+    bool ChangePort(const FName& SubjectName, int32& OutCurrentPort, int32 TargetPort);
 
 protected:
     /**
@@ -76,16 +79,22 @@ protected:
      * give the next available port.
      * @return true if a port has been added, false if a port already exists.
      */
-    bool AddPort(int32 &OutAvailablePort, int32 TargetPort = -1);
+    bool AddPort(int32& OutAvailablePort, int32 TargetPort = -1);
     bool RemovePort(int32 Port);
 
     /**
      * Derived classes need to override and implement this to create each source type's receiver.
      * @param SubjectName - Name of the subject to pass to the ReceiverManager.
-     * @param Port - Port number to pass..
-     * @param Callback - The callback to bind the receiver to to apply frame data to Live Link.
+     * @param EndpointInfo - Information about the transport endpoint to connect to.
+     * @param Protocol - Tracking protocol to use.
+     * @param HandleFrameCallback - The callback to bind the receiver to apply frame data to Live Link.
+     * @param SetStatusCallback - Callback to set success or failed status.
      */
-    virtual IMoSysTrackingReceiver *CreateReceiver(FName SubjectName, int32 Port, mosys::tracking::Protocol Protocol, ReceiverHandleFrameCallback HandleFrameCallback, ReceiverReadFrameFailedCallback SetStatusCallback) = 0;
+    virtual TSharedPtr<IMoSysTrackingReceiver> CreateReceiver(const FName& SubjectName,
+                                                              const mosys::networking::IEndpointInfo& EndpointInfo,
+                                                              mosys::tracking::Protocol Protocol,
+                                                              FReceiverHandleFrameCallback HandleFrameCallback,
+                                                              FReceiverReadFrameFailedCallback SetStatusCallback) = 0;
 
 public:
     /**
@@ -94,7 +103,7 @@ public:
      * @param SubjectName - Name of the subject needed to push to the client.
      * @param Frame - This frame's data that needs to be applied.
      */
-    void HandleSubjectFrame(FName SubjectName, FLiveLinkMoSysFrameData Frame);
+    void HandleSubjectFrame(const FName& SubjectName, const FLiveLinkMoSysFrameData& Frame);
 
     void SetWaitingTrackingStatus(FName SubjectName);
 
@@ -103,9 +112,9 @@ protected:
     FGuid Guid;
 
     /** Cast to this client in ReceiveClient. Used to push subject frame data to. */
-    FLiveLinkClient *LiveLinkClient;
+    FLiveLinkClient* LiveLinkClient;
 
-    TMap<FName, IMoSysTrackingReceiver*> EncounteredReceivers;
+    TMap<FName, TSharedPtr<IMoSysTrackingReceiver>> EncounteredReceivers;
 
     /** Variables to connect to the receiver. */
     FString CurrentIPAddress;

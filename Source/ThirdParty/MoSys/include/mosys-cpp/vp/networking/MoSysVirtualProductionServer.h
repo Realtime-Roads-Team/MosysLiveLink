@@ -31,6 +31,23 @@ namespace mosys
             return 8;
         }
     };
+    
+    struct LinearColour
+    {
+        // must match FLinearColor in Unreal
+        union
+        {
+            struct 
+            {
+                float	r,
+                        g,
+                        b,
+                        a;
+            };
+			
+            float rgba[4];
+        };
+    };
 
 
     struct MoSysVirtualProductionServerDelegate 
@@ -47,12 +64,16 @@ namespace mosys
         virtual void triggerCustom(uint8_t value) = 0;
         virtual void triggerCustomEight(MoSysEightBytes bytes) = 0;
         virtual void triggerCustomTransform(MoSysTransformf transform) = 0;
-        virtual void triggerCustomInt(int value) = 0;
-        virtual void triggerCustomFloat(float value) = 0;
+        virtual void triggerCustomInt(int index, int value) = 0;
+        virtual void triggerCustomFloat(int index, float value) = 0;
+        virtual void triggerLinearColour(int index, LinearColour value) = 0;
         virtual void LEDColourCorrection(MoSysLEDColourCorrection ColourCorrection) = 0;
         virtual void clearLEDColourCorrection(int cameraIndexToClear) = 0;
+        virtual void removeLEDColourCorrectionSample(int cameraIndex, int sampleIndex) = 0;
         virtual void startColourSlideshow(uint16_t LUTSize, uint16_t interval, float deltaTime, IPFour IPAddress, bool bBlackoutOtherNodes) = 0;
         virtual void hideARObjects(bool bHide) = 0;
+        virtual void enableDoF(bool bOn) = 0;
+        virtual void setCameraAperture(int cameraIndex, float aperture) = 0;
         virtual mosys::Timecode getTimecode() = 0;
         virtual bool getBroadcastIpsCSV(std::string& csv) = 0;
     };
@@ -82,15 +103,19 @@ namespace mosys
             bool broadcastTriggerCustom(uint8_t value);
             bool broadcastTriggerCustomEight(uint64_t value);
             bool broadcastTriggerCustomTransform(MoSysTransformf value);
-            bool broadcastTriggerCustomInt(int value);
-            bool broadcastTriggerCustomFloat(float value);
+            bool broadcastTriggerCustomInt(int index, int value);
+            bool broadcastTriggerCustomFloat(int index, float value);
+            bool broadcastTriggerLinearColour(int index, LinearColour value);
             bool broadcastSelectLevel(int levelIndex);
             bool broadcastSelectCameraXR(int cameraIndex, int extraDelayMs);
             bool broadcastSelectTestPatternXR(int testPatternIndex, IPFour IPAddress);
             bool broadcastLEDColourCorrection(MoSysLEDColourCorrection ColourCorrection);
             bool broadcastClearLEDColourCorrection(int cameraIndexToClear);
+            bool broadcastRemoveLEDColourCorrectionSample(int cameraIndex, int sampleIndex);
             bool broadcastStartColourSlideshow(uint16_t LUTSize, uint16_t interval, float deltaTime, IPFour IPAddress, bool bBlackoutOtherNodes);
             bool broadcastHideARObjects(bool bHide);
+            bool broadcastDoF(bool bOn);
+            bool broadcastCameraAperture(int cameraIndex, float aperture);
 
             MoSysVirtualProductionServer(MoSysVirtualProductionServer const&) = delete;
             MoSysVirtualProductionServer(MoSysVirtualProductionServer&&) = delete;

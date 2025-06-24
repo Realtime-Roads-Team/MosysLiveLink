@@ -7,6 +7,7 @@
 
 #include "MoSysLensModel.h"
 #include "MoSysTimecodeWrapper.h"
+#include "mosys-cpp/tracking/TrackingTypes.h"
 
 #include "MoSysTrackingTypes.generated.h"
 
@@ -20,6 +21,27 @@ enum class EMoSysSourceMode : uint8
     AudioDemodMode,
     Invalid,
 };
+
+UENUM()
+enum class EMosysTrackingProtocol : uint8
+{
+    F4,
+    OpenTrackIO
+};
+
+inline mosys::tracking::Protocol UnrealTrackingProtocolToMosysTrackingProtocol(EMosysTrackingProtocol protocol)
+{
+    switch (protocol)
+    {
+        case EMosysTrackingProtocol::F4: return mosys::tracking::Protocol::F4;
+        case EMosysTrackingProtocol::OpenTrackIO: return mosys::tracking::Protocol::OpenTrackIO;
+        default:
+            {
+                check(false && "Unsupported tracking protocol.");
+                return mosys::tracking::Protocol::F4;
+            }
+    }
+}
 
 /**
  * A Struct to handle converting a source mode from a string to an enum. Needed

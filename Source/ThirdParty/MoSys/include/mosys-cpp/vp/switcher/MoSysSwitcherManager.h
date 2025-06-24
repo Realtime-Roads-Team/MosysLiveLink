@@ -47,9 +47,7 @@ namespace mosys
 				DisconnectSwitcherCallback disconnectCallback = nullptr,
 				SwitcherType type = SwitcherType::ATEM_SWITCHER,
 				const uint16_t port = (uint16_t)SONY_SWITCHER_TCP_PORT,
-				const uint16_t tally = (uint16_t)SONY_SWITCHER_GP2_RED,
-				const bool loop = false,
-				const int ms = 0);
+				const uint16_t tally = (uint16_t)SONY_SWITCHER_GP2_RED);
 
 			bool isSwitcherValid();
 			bool setProgramInput(int inputId);
@@ -67,7 +65,7 @@ namespace mosys
 		private:
 			SwitcherManager();
 
-			void async_connect(const char* ipAddress, ConnectSwitcherCallback connectSwitcherCallback, InputChangedCallback inputChangedCallback, TallyCallback tallyCallback, DisconnectSwitcherCallback disconnectCallback, SwitcherType type = SwitcherType::ATEM_SWITCHER, const uint16_t port = SONY_SWITCHER_TCP_PORT, const uint16_t tally = SONY_SWITCHER_GP2_RED, const bool loop = false, const int ms = 0);
+			void async_connect(const char* ipAddress, ConnectSwitcherCallback connectSwitcherCallback, InputChangedCallback inputChangedCallback, TallyCallback tallyCallback, DisconnectSwitcherCallback disconnectCallback, SwitcherType type = SwitcherType::ATEM_SWITCHER, const uint16_t port = SONY_SWITCHER_TCP_PORT, const uint16_t tally = SONY_SWITCHER_GP2_RED);
 			video::ISwitcher* m_switcher;
 		};
 	} // namespace hardware

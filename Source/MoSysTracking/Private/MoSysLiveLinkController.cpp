@@ -51,6 +51,52 @@ bool UMoSysLiveLinkController::HasValidData()
 	return LiveLinkClient.EvaluateFrame_AnyThread(SelectedSubject.Subject, SelectedSubject.Role, SubjectData);
 }
 
+bool UMoSysLiveLinkController::InterpolateLiveLinkData(const FLiveLinkMoSysFrameData* LiveLinkData1, const FLiveLinkMoSysFrameData* LiveLinkData2, FLiveLinkMoSysFrameData& OutInterpolatedData, float InterpWeight)
+{
+	if (!LiveLinkData1 || !LiveLinkData2)
+	{
+		return false;
+	}
+
+	//Interpolate Transform and other applicable members
+	OutInterpolatedData.Transform.Blend(LiveLinkData1->Transform, LiveLinkData2->Transform, InterpWeight);
+	OutInterpolatedData.RawZoom = LiveLinkData1->RawZoom + LiveLinkData2->RawZoom;
+	OutInterpolatedData.RawFocus = LiveLinkData1->RawFocus + LiveLinkData2->RawFocus;
+	OutInterpolatedData.RawIris = LiveLinkData1->RawIris + LiveLinkData2->RawIris;
+	OutInterpolatedData.RawEncoder = LiveLinkData1->RawEncoder + LiveLinkData2->RawEncoder;
+
+	OutInterpolatedData.TrackingStatus = LiveLinkData2->TrackingStatus;
+	OutInterpolatedData.Timecode = LiveLinkData2->Timecode;
+	OutInterpolatedData.CameraID = LiveLinkData2->CameraID;
+	OutInterpolatedData.FrameProgressiveCounter = LiveLinkData2->FrameProgressiveCounter;
+	OutInterpolatedData.LensExtender = LiveLinkData2->LensExtender;
+
+	//Lens parameters
+	// Interpolate where applicable
+	OutInterpolatedData.Lens.FxVirtualCamera = FMath::Lerp(LiveLinkData1->Lens.FxVirtualCamera, LiveLinkData2->Lens.FxVirtualCamera, InterpWeight);
+	OutInterpolatedData.Lens.FyVirtualCamera = FMath::Lerp(LiveLinkData1->Lens.FyVirtualCamera, LiveLinkData2->Lens.FyVirtualCamera, InterpWeight);
+	OutInterpolatedData.Lens.FxDistorted = FMath::Lerp(LiveLinkData1->Lens.FxDistorted, LiveLinkData2->Lens.FxDistorted, InterpWeight);
+	OutInterpolatedData.Lens.FyDistorted = FMath::Lerp(LiveLinkData1->Lens.FyDistorted, LiveLinkData2->Lens.FyDistorted, InterpWeight);
+	OutInterpolatedData.Lens.K1 = FMath::Lerp(LiveLinkData1->Lens.K1, LiveLinkData2->Lens.K1, InterpWeight);
+	OutInterpolatedData.Lens.K2 = FMath::Lerp(LiveLinkData1->Lens.K2, LiveLinkData2->Lens.K2, InterpWeight);
+	OutInterpolatedData.Lens.K3 = FMath::Lerp(LiveLinkData1->Lens.K3, LiveLinkData2->Lens.K3, InterpWeight);
+	OutInterpolatedData.Lens.PrincipalPoint_cx = FMath::Lerp(LiveLinkData1->Lens.PrincipalPoint_cx, LiveLinkData2->Lens.PrincipalPoint_cx, InterpWeight);
+	OutInterpolatedData.Lens.PrincipalPoint_cy = FMath::Lerp(LiveLinkData1->Lens.PrincipalPoint_cy, LiveLinkData2->Lens.PrincipalPoint_cy, InterpWeight);
+	OutInterpolatedData.Lens.EntrancePupilDistance = FMath::Lerp(LiveLinkData1->Lens.EntrancePupilDistance, LiveLinkData2->Lens.EntrancePupilDistance, InterpWeight);
+	OutInterpolatedData.Lens.RecipFocalDistance = FMath::Lerp(LiveLinkData1->Lens.RecipFocalDistance, LiveLinkData2->Lens.RecipFocalDistance, InterpWeight);
+	OutInterpolatedData.Lens.Aperture = FMath::Lerp(LiveLinkData1->Lens.Aperture, LiveLinkData2->Lens.Aperture, InterpWeight);
+
+	// Assign directly from LiveLinkData2 for non-interpolatable members
+	OutInterpolatedData.Lens.IsK3Valid = LiveLinkData2->Lens.IsK3Valid;
+	OutInterpolatedData.Lens.IsTStops = LiveLinkData2->Lens.IsTStops;
+	OutInterpolatedData.Lens.HasData = LiveLinkData2->Lens.HasData;
+	OutInterpolatedData.Lens.ZoomOffset = LiveLinkData2->Lens.ZoomOffset;
+	OutInterpolatedData.Lens.FocusOffset = LiveLinkData2->Lens.FocusOffset;
+	OutInterpolatedData.Lens.IsP1P2Valid = LiveLinkData2->Lens.IsP1P2Valid;
+
+	return true;
+}
+
 void UMoSysLiveLinkController::Tick(float DeltaTime, const FLiveLinkSubjectFrameData& SubjectData)
 {
 	TrackingStatus = EMoSysTrackingStatus::Undefined;
@@ -65,37 +111,57 @@ void UMoSysLiveLinkController::Tick(float DeltaTime, const FLiveLinkSubjectFrame
     if (USceneComponent* SceneComponent = Cast<USceneComponent>(Attached))
     {
 
-    	if(FrameDelay + 1 < FrameBuffer.Num())
+    	if(FMath::Floor(FrameDelay) + 1 < FrameBuffer.Num())
     	{
     		FrameBuffer.Empty();
     	}
     	FrameBuffer.Add(*FrameDataIn);
     	CurrentFrame = *FrameDataIn;
-    	const FLiveLinkMoSysFrameData *FrameData = &FrameBuffer[0];
-    	if(FrameBuffer.Num() > FrameDelay + 1)
+		FLiveLinkMoSysFrameData FrameData;
+		bool FrameDataValid = false;
+		if (FrameBuffer.Num() > 1)
+		{
+			FrameDataValid = InterpolateLiveLinkData(&FrameBuffer[1], &FrameBuffer[0], FrameData, FrameDelay - FMath::Floor(FrameDelay));
+		}
+		else
+		{
+			if (FrameBuffer.Num() > 0)
+			{
+				if (&FrameBuffer[0])
+				{
+					FrameData = *&FrameBuffer[0];
+					FrameDataValid = true;
+				}
+				else
+				{
+					FrameDataValid = false;
+				}
+			}
+		}
+    	if(FrameBuffer.Num() > FMath::Floor(FrameDelay) + 1)
     	{
     		FrameBuffer.RemoveAt(0);
     	}
-		if (bUseCurrentZoom)
+		if (FrameDataValid && bUseCurrentZoom)
 		{
-			FrameBuffer[0].RawZoom = CurrentFrame.RawZoom;
-			FrameBuffer[0].RawFocus = CurrentFrame.RawFocus;
-			FrameBuffer[0].RawIris = CurrentFrame.RawIris;
-			FrameBuffer[0].Lens = CurrentFrame.Lens;
+			FrameData.RawZoom = CurrentFrame.RawZoom;
+			FrameData.RawFocus = CurrentFrame.RawFocus;
+			FrameData.RawIris = CurrentFrame.RawIris;
+			FrameData.Lens = CurrentFrame.Lens;
 		}
-		if (bUseCurrentRotation)
+		if (FrameDataValid && bUseCurrentRotation)
 		{
-			FrameBuffer[0].Transform.SetRotation(CurrentFrame.Transform.GetRotation());
+			FrameData.Transform.SetRotation(CurrentFrame.Transform.GetRotation());
 		}
     	
 		AActor* Actor = GetOuterActor();
-        if (FrameData && Actor)
+        if (FrameDataValid && Actor)
         {
             // Set scale to attached actor's scale
-            FTransform Transform = FrameData->Transform;
+            FTransform Transform = FrameData.Transform;
             Transform.SetTranslation(Transform.GetTranslation() * LiveLinkScaleFactor);
             Transform.SetScale3D(Actor->GetActorScale());
-            FQuat FrameQuat = FrameData->Transform.GetRotation() * LiveLinkScaleFactor;
+            FQuat FrameQuat = FrameData.Transform.GetRotation() * LiveLinkScaleFactor;
             FRotator FrameRotator = FrameQuat.Rotator();
 			if (bInvertPan)
 			{
@@ -117,23 +183,23 @@ void UMoSysLiveLinkController::Tick(float DeltaTime, const FLiveLinkSubjectFrame
 
             TransformData.ApplyTransform(SceneComponent, Transform, *StaticData);
 
-            TrackingStatus = FrameData->TrackingStatus;
-            Timecode = FrameData->Timecode;
+            TrackingStatus = FrameData.TrackingStatus;
+            Timecode = FrameData.Timecode;
             // If the frame progressive counter is wrong then most likely we dropped a frame due to this function
             // tick rate not matching the data rate.
 			int32 ExpectedFrameCount = (TrackingFrame.FrameProgressiveCounter + 1) % 16;
-			if (FrameData->FrameProgressiveCounter != ExpectedFrameCount)
+			if (FrameData.FrameProgressiveCounter != ExpectedFrameCount)
 			{
 				const FString WaitingStatusString = MoSysTrackingConversions::UEnum2TrackingStatusString(EMoSysTrackingStatus::Waiting);
 				// Log drop frames, but only when we are up and running
 				if (LogDropFrame &&	(TrackingStatusString != WaitingStatusString))
 				{
 					UE_LOG(LogMoSysTracking, Warning, TEXT("%s dropped tracking frame - received frame number %d expected %d (0-15)"),
-						*Actor->GetName(), FrameData->FrameProgressiveCounter, ExpectedFrameCount);
+						*Actor->GetName(), FrameData.FrameProgressiveCounter, ExpectedFrameCount);
 				}
 				// If the frame progressive counter hasn't progressed for a while, we most likely lost tracking data.
 				// We should still store everything (so it holds last position etc), but update the status accordingly
-				if (FrameData->FrameProgressiveCounter == TrackingFrame.FrameProgressiveCounter)
+				if (FrameData.FrameProgressiveCounter == TrackingFrame.FrameProgressiveCounter)
 				{
 					StalledFrameCounter++;
 					if (StalledFrameCounter > STALLED_FRAME_COUNT_MAX)
@@ -152,8 +218,8 @@ void UMoSysLiveLinkController::Tick(float DeltaTime, const FLiveLinkSubjectFrame
 				StalledFrameCounter = 0;
 			}
 			// Handle lens, from LiveLinkLensController
-        	HandleLens(FrameData);
-            TrackingFrame = *FrameData;
+        	HandleLens(&FrameData);
+            TrackingFrame = FrameData;
         }
     }
 }

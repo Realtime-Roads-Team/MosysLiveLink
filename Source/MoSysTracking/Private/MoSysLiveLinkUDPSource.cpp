@@ -1,4 +1,4 @@
-// Copyright 2023 Mo-Sys Engineering Ltd. All Rights Reserved.
+// Copyright 2025 Mo-Sys Engineering Ltd. All Rights Reserved.
 
 #include "MoSysLiveLinkUDPSource.h"
 
@@ -6,14 +6,14 @@
 #include "MoSysLiveLinkSourceSettings.h"
 #include "MoSysLiveLinkSubjectSettings.h"
 #include "MoSysTrackingConversions.h"
-#include "MoSysTrackingPrivate.h"
 #include "MoSysTrackingReceiverManager.h"
 
-#include "Interfaces/IPv4/IPv4Address.h"
+#include "mosys-cpp/networking/transports/endpoint-info/UDPEndpointInfo.h"
+
 #include "IPAddress.h"
 #include "LiveLinkClient.h"
+#include "MoSysTrackingSettingsProvider.h"
 #include "SocketSubsystem.h"
-
 
 FMoSysLiveLinkUDPSource::FMoSysLiveLinkUDPSource()
 {
@@ -24,7 +24,7 @@ FMoSysLiveLinkUDPSource::FMoSysLiveLinkUDPSource()
     {
         TArray<TSharedPtr<FInternetAddr>> AdapterAddresses;
         if (ISocketInstance->GetLocalAdapterAddresses(AdapterAddresses))
-        { 
+        {
             if (AdapterAddresses.Num() != 0)
             {
                 TSharedRef<FInternetAddr> LocalIP = ISocketInstance->GetLocalHostAddr(*GLog, bCanBind);
@@ -42,7 +42,7 @@ FText FMoSysLiveLinkUDPSource::GetSourceType() const
     return FText::FromString("Mo-Sys UDP Source");
 }
 
-void FMoSysLiveLinkUDPSource::InitializeSettings(ULiveLinkSourceSettings * Settings)
+void FMoSysLiveLinkUDPSource::InitializeSettings(ULiveLinkSourceSettings* Settings)
 {
     if (Settings == nullptr)
     {
@@ -56,6 +56,45 @@ void FMoSysLiveLinkUDPSource::InitializeSettings(ULiveLinkSourceSettings * Setti
     }
     UMoSysLiveLinkUDPSourceSettings* UDPSettings = static_cast<UMoSysLiveLinkUDPSourceSettings*>(Settings);
     CurrentIPAddress = UDPSettings->IPAddress;
+}
+
+bool FMoSysLiveLinkUDPSource::StartWorker(const FName& SubjectName, const FString& Parameter)
+{
+    auto HandleSubjectFrameCallback = std::bind(&FMoSysLiveLinkSource::HandleSubjectFrame, this, std::placeholders::_1,
+                                                std::placeholders::_2);
+    auto WaitingTrackingStatusCallback = std::bind(&FMoSysLiveLinkSource::SetWaitingTrackingStatus, this,
+                                                   std::placeholders::_1);
+
+    if (!FMoSysLiveLinkSource::StartWorker(SubjectName, Parameter))
+    {
+        return false;
+    }
+
+
+    auto Protocol = FMoSysTrackingSettingsProvider::Get().GetUDPTrackingProtocol();
+
+    const uint16 Port = FCString::Atoi(*Parameter);
+    const mosys::networking::UDPEndpointInfo EndpointInfo{TCHAR_TO_UTF8(*CurrentIPAddress), Port};
+    const TSharedPtr<IMoSysTrackingReceiver> Receiver = CreateReceiver(SubjectName,
+                                                                 EndpointInfo,
+                                                                 Protocol,
+                                                                 HandleSubjectFrameCallback,
+                                                                 WaitingTrackingStatusCallback);
+
+    if (Receiver && Receiver->IsInitialized())
+    {
+        FLiveLinkStaticDataStruct StaticDataStruct =
+            FLiveLinkStaticDataStruct(FLiveLinkMoSysStaticData::StaticStruct());
+        if (LiveLinkClient)
+        {
+            LiveLinkClient->PushSubjectStaticData_AnyThread({Guid, SubjectName}, UMoSysLiveLinkRole::StaticClass(),
+                                                            MoveTemp(StaticDataStruct));
+        }
+        EncounteredReceivers.Add(SubjectName, Receiver);
+        return true;
+    }
+
+    return false;
 }
 
 void FMoSysLiveLinkUDPSource::SetEngineTimeOffset(ULiveLinkSourceSettings* Settings)
@@ -79,22 +118,25 @@ TSubclassOf<ULiveLinkSourceSettings> FMoSysLiveLinkUDPSource::GetSettingsClass()
     return UMoSysLiveLinkUDPSourceSettings::StaticClass();
 }
 
-IMoSysTrackingReceiver *FMoSysLiveLinkUDPSource::CreateReceiver(FName SubjectName, int32 Port, mosys::tracking::Protocol Protocol, ReceiverHandleFrameCallback HandleFrameCallback, ReceiverReadFrameFailedCallback SetStatusCallback)
+TSharedPtr<IMoSysTrackingReceiver> FMoSysLiveLinkUDPSource::CreateReceiver(
+    const FName& SubjectName,
+    const mosys::networking::IEndpointInfo& EndpointInfo,
+    mosys::tracking::Protocol Protocol,
+    FReceiverHandleFrameCallback HandleFrameCallback,
+    FReceiverReadFrameFailedCallback SetStatusCallback)
 {
     return FMoSysTrackingReceiverManager::GetInstance().CreateReceiver(
         SubjectName,
-        FString::FromInt(Port),
-        mosys::tracking::CommunicationMode::UDPBlocking,
+        EndpointInfo,
         Protocol,
         HandleFrameCallback,
-        SetStatusCallback,
-        CurrentIPAddress);
+        SetStatusCallback);
 }
 
 void FMoSysLiveLinkUDPSource::OnSubjectCreated(FLiveLinkSubjectKey SubjectKey)
 {
     auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings(SubjectKey);
-    UMoSysUDPSubjectSettings *SubjectSettings = Cast<UMoSysUDPSubjectSettings>(LiveLinkSubjectSettings);
+    UMoSysUDPSubjectSettings* SubjectSettings = Cast<UMoSysUDPSubjectSettings>(LiveLinkSubjectSettings);
 
     if (SubjectSettings)
     {
@@ -108,7 +150,8 @@ void FMoSysLiveLinkUDPSource::OnSubjectCreated(FLiveLinkSubjectKey SubjectKey)
             OccupiedPorts.Add(SubjectSettings->Port);
         }
         StartWorker(SubjectKey.SubjectName, FString::FromInt(SubjectSettings->Port));
-        SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(EMoSysTrackingStatus::Waiting);
+        SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(
+            EMoSysTrackingStatus::Waiting);
     }
 }
 
@@ -117,32 +160,34 @@ void FMoSysLiveLinkUDPSource::ChangeIPAddress(FString IPAddress)
     FString OldIPAddress = CurrentIPAddress;
     CurrentIPAddress = IPAddress;
     TArray<FName> ReceiverNames;
-    UMoSysUDPSubjectSettings *SubjectSettings = nullptr;
-    for (auto Elem : EncounteredReceivers)
+    UMoSysUDPSubjectSettings* SubjectSettings = nullptr;
+
+    for (const auto& Pair : EncounteredReceivers)
     {
-        IMoSysTrackingReceiver *Receiver = Elem.Value;
-        if (Receiver)
+        if (Pair.Value.IsValid())
         {
-            Receiver->Stop();
-            delete Receiver;
-            Receiver = nullptr;
+            Pair.Value->Stop();
         }
-        ReceiverNames.Add(Elem.Key);
+
+        ReceiverNames.Add(Pair.Key);
     }
+
     EncounteredReceivers.Empty();
-    
+
     for (auto Name : ReceiverNames)
     {
         if (LiveLinkClient)
         {
-            TObjectPtr<UObject>Settings = LiveLinkClient->GetSubjectSettings({Guid, Name});
+            TObjectPtr<UObject> Settings = LiveLinkClient->GetSubjectSettings({Guid, Name});
             SubjectSettings = Cast<UMoSysUDPSubjectSettings>(Settings);
         }
+
         if (SubjectSettings)
         {
             if (StartWorker(Name, FString::FromInt(SubjectSettings->Port)))
             {
-                SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(EMoSysTrackingStatus::Waiting);
+                SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(
+                    EMoSysTrackingStatus::Waiting);
             }
             else
             {
@@ -161,7 +206,7 @@ void FMoSysLiveLinkUDPSource::CreateSubject(FName SubjectName)
         SubjectPreset.Key = SubjectKey;
         SubjectPreset.Role = UMoSysLiveLinkRole::StaticClass();
 
-        UMoSysUDPSubjectSettings *SubjectSettings = NewObject<UMoSysUDPSubjectSettings>();
+        UMoSysUDPSubjectSettings* SubjectSettings = NewObject<UMoSysUDPSubjectSettings>();
 
         if (SubjectSettings)
         {
@@ -176,14 +221,13 @@ void FMoSysLiveLinkUDPSource::CreateSubject(FName SubjectName)
     }
 }
 
-void FMoSysLiveLinkUDPSource::RemoveSubject(FName SubjectName)
+void FMoSysLiveLinkUDPSource::RemoveSubject(const FName& SubjectName)
 {
     FMoSysLiveLinkSource::RemoveSubject(SubjectName);
     if (LiveLinkClient)
     {
-        auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({ Guid, SubjectName });
-        UMoSysUDPSubjectSettings* SubjectSettings = Cast<UMoSysUDPSubjectSettings>(LiveLinkSubjectSettings);
-        if (SubjectSettings)
+        const auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({Guid, SubjectName});
+        if (const UMoSysUDPSubjectSettings* SubjectSettings = Cast<UMoSysUDPSubjectSettings>(LiveLinkSubjectSettings))
         {
             RemovePort(SubjectSettings->Port);
         }

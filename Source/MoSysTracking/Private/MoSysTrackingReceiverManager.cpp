@@ -1,34 +1,41 @@
-// Copyright 2023 Mo-Sys Engineering Ltd. All Rights Reserved.
+// Copyright 2025 Mo-Sys Engineering Ltd. All Rights Reserved.
 
 #include "MoSysTrackingReceiverManager.h"
+
 #include "MoSysTrackingReceiver.h"
 
-IMoSysTrackingReceiver *FMoSysTrackingReceiverManager::CreateReceiver(FName SubjectName, 
-    FString InPort, 
-    mosys::tracking::CommunicationMode InMode, 
-    mosys::tracking::Protocol InProtocol, 
-    ReceiverHandleFrameCallback InHandleFrameCallback,
-    ReceiverReadFrameFailedCallback InHandleFailedFrameCallback,
-    FString InIpAddress)
+TSharedPtr<IMoSysTrackingReceiver> FMoSysTrackingReceiverManager::CreateReceiver(
+    const FName& SubjectName,
+    const mosys::networking::IEndpointInfo& EndpointInfo,
+    mosys::tracking::Protocol InProtocol,
+    FReceiverHandleFrameCallback InHandleFrameCallback,
+    FReceiverReadFrameFailedCallback InHandleFailedFrameCallback)
 {
-    IMoSysTrackingReceiver *Receiver = new FMoSysTrackingReceiver(SubjectName, InPort, InMode, InProtocol, 
-        Receivers.Num() + 1, InHandleFrameCallback, InHandleFailedFrameCallback, InIpAddress);
+    auto Receiver = TSharedPtr<FMoSysTrackingReceiver>(
+        new FMoSysTrackingReceiver(SubjectName,
+                                   EndpointInfo,
+                                   InProtocol,
+                                   Receivers.Num() + 1,
+                                   InHandleFrameCallback,
+                                   InHandleFailedFrameCallback));
+
     if (Receiver)
     {
         Receivers.Add(SubjectName, Receiver);
     }
+
     return Receiver;
 }
 
-bool FMoSysTrackingReceiverManager::DeleteReceiver(FName SubjectName)
+bool FMoSysTrackingReceiverManager::DeleteReceiver(const FName& SubjectName)
 {
     if (Receivers.Contains(SubjectName))
     {
         Receivers[SubjectName]->Stop();
-        delete Receivers[SubjectName];
-        Receivers[SubjectName] = nullptr;
+        Receivers[SubjectName].Reset();
         Receivers.Remove(SubjectName);
         return true;
     }
+
     return false;
 }

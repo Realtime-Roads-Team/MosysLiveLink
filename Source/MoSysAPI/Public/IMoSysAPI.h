@@ -15,8 +15,11 @@
 #include "mosys-cpp/vp/networking/MoSysVirtualProductionServer.h"
 #include "mosys-cpp/vp/networking/CCSNearTimeRest.h"
 #include "mosys-cpp/vp/recorder/MoSysRecorderManager.h"
+#include "mosys-cpp/vp/ledcontroller/LedControllerManager.h"
 #include "mosys-cpp/vp/switcher/MoSysSwitcherManager.h"
 #include "mosys-cpp/vp/video/MoSysCardManager.h"
+#include "mosys-cpp/vp/xr/MoSysMoViewer.h"
+#include "mosys-cpp/robotics/MoSysSubjectTrackerManager.h"
 
 
 /**
@@ -59,6 +62,9 @@ public:
 	virtual mosys::MoSysVirtualProductionServer& GetMoSysVPServer() = 0;
 	virtual ccs::CCSNearTimeRest& GetCCSNearTimeRest() = 0;
 	virtual mosys::hardware::MoSysRecorderManager& GetRecorderManager() = 0;
+    virtual mosys::hardware::LedControllerManager& GetLedControllerManager() = 0;
 	virtual mosys::hardware::SwitcherManager& GetSwitcherManager() = 0;
     virtual mosys::video::CardManager& GetCardManager() = 0;
+	virtual mosys::hardware::MoSysSubjectTrackerManager& GetSubjectTrackerManager() = 0;
+	virtual mosys::hardware::MoViewer& GetMoViewer() = 0;
 };

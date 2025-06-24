@@ -1,4 +1,4 @@
-// Copyright 2023 Mo-Sys Engineering Ltd. All Rights Reserved.
+// Copyright 2025 Mo-Sys Engineering Ltd. All Rights Reserved.
 
 #pragma once
 
@@ -13,11 +13,12 @@ class IMoSysTrackingReceiver;
 /**
  * Serial Source for Mo-Sys Live Link
  */
-class FMoSysLiveLinkSerialSource : public FMoSysLiveLinkSource
+class FMoSysLiveLinkSerialSource final : public FMoSysLiveLinkSource
 {
 public:
     FMoSysLiveLinkSerialSource() { DefaultAvailablePort = DEFAULT_SERIAL_PORT; }
-    ~FMoSysLiveLinkSerialSource() {}
+
+    virtual ~FMoSysLiveLinkSerialSource() override = default;
 
     //~ Begin ILiveLinkSource Interface
     virtual FText GetSourceType() const override;
@@ -25,8 +26,9 @@ public:
 
     //~ Begin FMoSysLiveLinkSource Interface
     virtual void CreateSubject(FName SubjectName) override;
-    virtual void RemoveSubject(FName SubjectName) override;
+    virtual void RemoveSubject(const FName& SubjectName) override;
     virtual void OnSubjectCreated(FLiveLinkSubjectKey SubjectKey) override;
+    virtual bool StartWorker(const FName& SubjectName, const FString& Parameter) override;
     //~ End FMoSysLiveLinkSource Interface
 
 protected:
@@ -35,6 +37,11 @@ protected:
     //~ End ILiveLinkSource Interface
 
     //~ Begin FMoSysLiveLinkSource Interface
-    virtual IMoSysTrackingReceiver *CreateReceiver(FName SubjectName, int32 Port, mosys::tracking::Protocol Protocol, ReceiverHandleFrameCallback HandleFrameCallback, ReceiverReadFrameFailedCallback SetStatusCallback) override;
+    virtual TSharedPtr<IMoSysTrackingReceiver> CreateReceiver(
+        const FName& SubjectName,
+        const mosys::networking::IEndpointInfo& EndpointInfo,
+        mosys::tracking::Protocol Protocol,
+        FReceiverHandleFrameCallback HandleFrameCallback,
+        FReceiverReadFrameFailedCallback SetStatusCallback) override;
     //~ End FMoSysLiveLinkSource Interface
 };

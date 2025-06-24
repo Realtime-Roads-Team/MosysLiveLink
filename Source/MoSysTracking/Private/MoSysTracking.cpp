@@ -2,10 +2,8 @@
 
 #include "IMoSysTracking.h"
 #include "MoSysTrackingPrivate.h"
-#include "tracking/TrackingTypes.h"
 
 #include "HAL/PlatformProcess.h"
-#include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
 #include "Misc/Base64.h"
 #include "Modules/ModuleManager.h"

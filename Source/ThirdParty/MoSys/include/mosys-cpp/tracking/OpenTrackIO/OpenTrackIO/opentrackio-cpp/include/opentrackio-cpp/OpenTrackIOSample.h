@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Mo-Sys Engineering Ltd
+ * Copyright 2025 Mo-Sys Engineering Ltd
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), 
  * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, 
  * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
@@ -19,8 +19,6 @@
 
 namespace opentrackio
 {
-    #define OPEN_TRACK_IO_PROTOCOL_NAME "OpenTrackIO"
-    #define OPEN_TRACK_IO_PROTOCOL_VERSION "1.0.0"
     struct OpenTrackIOSample
     {
         std::optional<opentrackioproperties::Camera> camera = std::nullopt;
@@ -58,7 +56,8 @@ namespace opentrackio
         void parseTimingToJson(nlohmann::json& baseJson);
         void parseTrackerToJson(nlohmann::json& baseJson);
         void parseTransformsToJson(nlohmann::json& baseJson);
-        
+
+        [[nodiscard]] bool isEmpty() const;
         void warnForRemainingFields(const nlohmann::json& json);
         
         std::optional<nlohmann::json> m_json = std::nullopt;

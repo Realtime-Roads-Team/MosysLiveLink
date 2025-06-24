@@ -14,6 +14,8 @@
 #include "Math/NumericLimits.h"
 #include "Engine/Engine.h"
 #include "CoreMinimal.h"
+#include "Kismet/KismetMaterialLibrary.h"
+#include "Materials/MaterialParameterCollection.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
@@ -76,6 +78,7 @@ void UMoSysLensDistortionModelHandler::InitializeHandler()
 	MoSysCalibrationLayerRT = Cast<UTextureRenderTarget2D>(FSoftObjectPath(TEXT("/MoSysVPPro/LensDistortion/RT_MoSysCalibrationLayer.RT_MoSysCalibrationLayer")).TryLoad());
 	MoSysDisplacementMapRT = Cast<UTextureRenderTarget2D>(FSoftObjectPath(TEXT("/MoSysVPPro/LensDistortion/RT_MoSysDisplacementMap.RT_MoSysDisplacementMap")).TryLoad());
 	MoSysUndisplacementMapRT = Cast<UTextureRenderTarget2D>(FSoftObjectPath(TEXT("/MoSysVPPro/LensDistortion/RT_MoSysUndisplacementMap.RT_MoSysUndisplacementMap")).TryLoad());
+	CompositorMaterialParameterCollection = Cast<UMaterialParameterCollection>(FSoftObjectPath(TEXT("/Compositor/Materials/ParameterCollections/MPC_Compositor")).TryLoad());
 }
 
 void UMoSysLensDistortionModelHandler::PostInitProperties()
@@ -97,6 +100,12 @@ void UMoSysLensDistortionModelHandler::PostInitProperties()
 void UMoSysLensDistortionModelHandler::SetIsRendering(bool IsRendering)
 {
 	bIsRendering = IsRendering;
+}
+
+void UMoSysLensDistortionModelHandler::SetIsCameraActive(bool IsCameraActive)
+{
+	bIsCameraActive = IsCameraActive;
+	
 }
 
 void UMoSysLensDistortionModelHandler::HandleRenderSettings(const FMoSysRenderSettings& RenderSettings)
@@ -389,6 +398,10 @@ void UMoSysLensDistortionModelHandler::UpdateMaterialParameters()
 			UKismetRenderingLibrary::DrawMaterialToRenderTarget(WorldContextObject.Get(), DistortionDisplacementMapRT, DistortionDisplacementMapMID);
 		}
 	}
+	if (bIsCameraActive)
+	{
+		RenderDistortionDisplacementMapIfNeeded();
+	}
 
 	if (IsValid(DistortionPostProcessMID))
 	{
@@ -569,4 +582,30 @@ float UMoSysLensDistortionModelHandler::ComputeMoSysOverscanFactor() const
 FVector2D UMoSysLensDistortionModelHandler::GetLastFocalLength() const
 {
 	return LastFocalLength;
+}
+
+TObjectPtr<UTextureRenderTarget2D> UMoSysLensDistortionModelHandler::GetMoSysDisplacementMapRT()
+{
+	return MoSysDisplacementMapRT;
+}
+
+TObjectPtr<UTextureRenderTarget2D> UMoSysLensDistortionModelHandler::GetMoSysUndisplacementMapRT()
+{
+	return MoSysUndisplacementMapRT;
+}
+
+void UMoSysLensDistortionModelHandler::RenderDistortionDisplacementMapIfNeeded()
+{
+	if (CompositorMaterialParameterCollection)
+	{
+		// draw distortion displacement map to the RT if we are using geometry correction regions. This is needed to be able to apply distortion 
+		// to custom stencils in after tonemapper material
+		if(UWorld* World = GetWorld())
+		{
+			if (UKismetMaterialLibrary::GetScalarParameterValue(World, CompositorMaterialParameterCollection, TEXT("UseGeometryCorrectionRegions")))
+			{
+				UKismetRenderingLibrary::DrawMaterialToRenderTarget(World, MoSysDisplacementMapRT, DistortionDisplacementMapMID);
+			}
+		}
+	}
 }

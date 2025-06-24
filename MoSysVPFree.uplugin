@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 12,
-	"VersionName": "12.1.0",
+	"VersionName": "12.2.0",
 	"FriendlyName": "Mo-Sys LiveLink",
 	"Description": "Free Virtual Production plugin that enables CG-only VP with Mo-Sys hardware.",
 	"Category": "Virtual Production",
@@ -10,7 +10,7 @@
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
-	"EngineVersion": "5.5.0",
+	"EngineVersion": "5.6.0",
 	"CanContainContent": true,
 	"Installed": true,
 	"Modules": [

@@ -55,7 +55,7 @@ public:
     bool bInvertTilt = false;
 
     UPROPERTY(EditAnywhere, DisplayName = "Frame Delay", Category = "Mo-Sys|Tracking|Delay", meta = (ClampMin = "0", ClampMax = "50", UIMin = "0", UIMax = "50"))
-    int32 FrameDelay = 0;
+    float FrameDelay = 0;
 
     UPROPERTY(EditAnywhere, DisplayName = "Use current zoom", Category = "Mo-Sys|Tracking|Delay")
     bool bUseCurrentZoom = true;
@@ -100,6 +100,8 @@ public:
     void TickForceLensUpdate(float DeltaTime);
     
     FLiveLinkMoSysFrameData GetCurrentFrame();
+
+    bool InterpolateLiveLinkData(const FLiveLinkMoSysFrameData* LiveLinkData1, const FLiveLinkMoSysFrameData* LiveLinkData2, FLiveLinkMoSysFrameData& OutInterpolatedData, float InterpWeight);
 
 protected:
     /** Cached distortion handler associated with attached camera component */

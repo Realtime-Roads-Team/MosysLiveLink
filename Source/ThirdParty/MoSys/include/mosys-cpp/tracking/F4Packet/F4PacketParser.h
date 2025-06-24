@@ -1,28 +1,26 @@
-// Copyright 2024 Mo-Sys Engineering Ltd. All Rights Reserved.
+// Copyright 2025 Mo-Sys Engineering Ltd. All Rights Reserved.
 #pragma once
 
-#include "mosys-cpp/tracking/PacketParser.h"
+#include "mosys-cpp/tracking/interfaces/IPacketParser.h"
 #include "mosys-cpp/tracking/F4Packet/F4Packet.h"
-#include "mosys-cpp/tracking/F4Packet/F4Helper.h"
 
-#include <string>
-
-namespace mosys
+namespace mosys::tracking
 {
-    class F4PacketParser : public PacketParser
+    class F4PacketParser final : public IPacketParser
     {
     public:
-        F4PacketParser() : PacketParser() {}
-        ~F4PacketParser() {}
-        bool initialise(unsigned char *data, size_t size) override;
-        void getTrackingFrame(tracking::TrackingFrame& frame)  override;
+        F4PacketParser() = default;
+
+        ~F4PacketParser() override = default;
+
+        [[nodiscard]] bool parse(std::span<const uint8_t> data,
+                                 TrackingFrame& outTrackingFrame,
+                                 std::string& outErrorMessage) override;
 
     private:
-        void axisBlockToAngleLinearRaw(const F4AxisBlock& axisBlock, float& value, unsigned int factor = helper::f4::DEFAULT_FACTOR);
-        void axisBlockToLensType(const F4AxisBlock& axisBlock, uint16_t& value);
-        void axisBlockToLensParam(const F4AxisBlock& axisBlock, float& value);
+        void populateTrackingFrame(TrackingFrame& outTrackingFrame) const;
 
-        F4Packet m_packet;
+        F4Packet m_packet{};
+        uint16_t m_frameNumber{0};
     };
-
-} // namespace mosys
+} // namespace mosys::tracking

@@ -1,4 +1,4 @@
-// Copyright 2023 Mo-Sys Engineering Ltd. All Rights Reserved.
+// Copyright 2025 Mo-Sys Engineering Ltd. All Rights Reserved.
 
 #pragma once
 
@@ -10,35 +10,51 @@
 #include <functional>
 
 #include "tracking/TrackingTypes.h"
+#include "networking/interfaces/IEndpointInfo.h"
+
+namespace mosys::tracking
+{
+    class TrackingReceiverWorker;
+} // namespace mosys::tracking
 
 class FMoSysTrackingFrame;
 
-class FMoSysTrackingReceiver : public IMoSysTrackingReceiver, public TSharedFromThis<IMoSysTrackingReceiver>
+class FMoSysTrackingReceiver final : public IMoSysTrackingReceiver, public TSharedFromThis<IMoSysTrackingReceiver>
 {
 public:
     friend FMoSysTrackingReceiverManager;
 
     virtual ~FMoSysTrackingReceiver() override;
 
-    /** Thread-safe access to the status for the LiveLink UI */
-    void GetStatus(FText &OutStatus) override;
+    [[nodiscard]] virtual bool IsInitialized() const override { return Initialized; }
 
-    /** Thread-safe access to the last error message. */
-    void GetLastErrorMessage(FString &OutMessage) override;
+    /** Thread-safe access to the status for the LiveLink UI */
+    virtual void GetStatus(FText& OutStatus) override;
 
     /** Message key for logging on screen messages for this worker. */
-    uint64 GetMessageKey() override;
+    virtual uint64 GetMessageKey() override;
 
     /** True if the thread has initialised */
-    bool IsRunning() override;
+    virtual bool IsRunning() override;
 
     /** True if receiving data */
-    bool IsReceiving() override;
+    virtual bool IsReceiving() override;
 
     void OnPreExit();
-private:
 
-    FMoSysTrackingReceiver(FName InSubjectName, FString InPort, mosys::tracking::CommunicationMode InMode, mosys::tracking::Protocol InProtocol, uint64 InMessageKey, ReceiverHandleFrameCallback InHandleFrameCallback, ReceiverReadFrameFailedCallback InHandleFailedFrameCallback, FString InIpAddress);
+private:
+    FMoSysTrackingReceiver(FName InSubjectName,
+                           const mosys::networking::IEndpointInfo& EndpointInfo,
+                           mosys::tracking::Protocol Protocol,
+                           uint64 MessageKey,
+                           FReceiverHandleFrameCallback HandleFrameCallback,
+                           FReceiverReadFrameFailedCallback HandleFailedFrameCallback);
+
+    bool InitializeTrackingWorker(const mosys::networking::IEndpointInfo& EndpointInfo,
+                                 mosys::tracking::Protocol Protocol,
+                                 std::string& OutErrorMessage);
+
+    bool Initialized = false;
 
     /** Thread to run the worker FRunnable on */
     TUniquePtr<FRunnableThread> Thread;
@@ -49,11 +65,8 @@ private:
     /** Critical section for status text lock */
     FCriticalSection StatusSection;
 
-    /** Critical section for error message lock */
-    FCriticalSection MessageSection;
-
     /** Thread-safe running counter */
-    FThreadSafeCounter RunningCounter;
+    FThreadSafeCounter RunningCounter = 0;
 
     /** Used to exit early from running background thread. */
     std::atomic_bool bRequestedThreadExit = false;
@@ -61,12 +74,12 @@ private:
     /** Thread-safe engine shutdown status */
     std::atomic_bool bEnginePreExit = false;
 
-    ReceiverHandleFrameCallback HandleFrameCallback;
+    FReceiverHandleFrameCallback HandleFrameCallback;
 
-    ReceiverReadFrameFailedCallback WaitingStatusCallback;
+    FReceiverReadFrameFailedCallback WaitingStatusCallback;
 
     /** Thread-safe receiving data counter */
-    FThreadSafeCounter ReceivingCounter;
+    FThreadSafeCounter ReceivingCounter = 0;
 
     /* Name of the subject the receiver is attached to */
     FName SubjectName;
@@ -78,7 +91,7 @@ private:
     FString IpAddress;
 
     /** The Mo-Sys Tracking API read worker */
-    TUniquePtr<mosys::tracking::Worker> Worker;
+    TUniquePtr<mosys::tracking::TrackingReceiverWorker> Worker;
 
     /** The last frame number received */
     int LastFrameNumber;
@@ -86,16 +99,13 @@ private:
     /** The last status detail string received */
     FString LastStatus;
 
-    // Port error message and thread-safe setters
-    FString LastErrorMessage;
-    void SetLastErrorMessage(FString message, bool Log = true);
-    void SetPortErrorMessage(bool Log = true);
+    /** Formatted logging with thread name and timestamp. */
+    void LogError(const std::string& Message) const;
 
     /** Key for message logging */
     unsigned int MessageKey;
 
     /** Gets rid of the noisy error message log */
-    // FThreadSafeBool deprecated
     std::atomic_bool bLogOnce = true;
 
 protected:

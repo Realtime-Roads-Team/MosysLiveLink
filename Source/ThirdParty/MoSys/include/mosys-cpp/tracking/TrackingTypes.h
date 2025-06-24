@@ -5,7 +5,6 @@
 #include <mutex>
 
 #include "mosys-cpp/lens/LensParameters.h"
-#include <string>
 #include <vector>
 
 #include "mosys-cpp/core/Timecode.h"
@@ -29,8 +28,8 @@ namespace mosys
 {
     // Forward declarations
     class TrackingPort;
-    class PacketParser;
-    class PacketBuilder;
+    class IPacketParser;
+    class IPacketBuilder;
     namespace tracking {
         struct TrackingFrame;
     }
@@ -432,7 +431,8 @@ namespace mosys
         enum class Protocol
         {
             F4 = 0,
-            TrackerLite = 1
+            TrackerLite = 1,
+            OpenTrackIO = 2
         };
 
         /**

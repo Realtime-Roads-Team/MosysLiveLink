@@ -1,4 +1,4 @@
-// Copyright 2023 Mo-Sys Engineering Ltd. All Rights Reserved.
+// Copyright 2025 Mo-Sys Engineering Ltd. All Rights Reserved.
 
 #include "MoSysLiveLinkSerialSource.h"
 
@@ -6,11 +6,11 @@
 #include "MoSysLiveLinkSourceSettings.h"
 #include "MoSysLiveLinkSubjectSettings.h"
 #include "MoSysTrackingConversions.h"
-#include "MoSysTrackingPrivate.h"
 #include "MoSysTrackingReceiverManager.h"
 
-#include "LiveLinkClient.h"
+#include "mosys-cpp/networking/transports/endpoint-info/SerialEndpointInfo.h"
 
+#include "LiveLinkClient.h"
 
 FText FMoSysLiveLinkSerialSource::GetSourceType() const
 {
@@ -22,23 +22,25 @@ TSubclassOf<ULiveLinkSourceSettings> FMoSysLiveLinkSerialSource::GetSettingsClas
     return UMoSysLiveLinkSerialSourceSettings::StaticClass();
 }
 
-IMoSysTrackingReceiver * FMoSysLiveLinkSerialSource::CreateReceiver(FName SubjectName, int32 Port, mosys::tracking::Protocol Protocol, ReceiverHandleFrameCallback HandleFrameCallback, ReceiverReadFrameFailedCallback SetStatusCallback)
+TSharedPtr<IMoSysTrackingReceiver> FMoSysLiveLinkSerialSource::CreateReceiver(
+    const FName& SubjectName,
+    const mosys::networking::IEndpointInfo& EndpointInfo,
+    mosys::tracking::Protocol Protocol,
+    FReceiverHandleFrameCallback HandleFrameCallback,
+    FReceiverReadFrameFailedCallback SetStatusCallback)
 {
-    using namespace mosys::tracking;
     return FMoSysTrackingReceiverManager::GetInstance().CreateReceiver(
         SubjectName,
-        "COM" + FString::FromInt(Port),
-        Protocol == Protocol::F4 ? CommunicationMode::SerialBlocking : CommunicationMode::TrackerLiteSerial,
+        EndpointInfo,
         Protocol,
         HandleFrameCallback,
-        SetStatusCallback,
-        CurrentIPAddress);
+        SetStatusCallback);
 }
 
 void FMoSysLiveLinkSerialSource::OnSubjectCreated(FLiveLinkSubjectKey SubjectKey)
 {
-    auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({ Guid, SubjectKey.SubjectName });
-    UMoSysSerialSubjectSettings *SubjectSettings = Cast<UMoSysSerialSubjectSettings>(LiveLinkSubjectSettings);
+    auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({Guid, SubjectKey.SubjectName});
+    UMoSysSerialSubjectSettings* SubjectSettings = Cast<UMoSysSerialSubjectSettings>(LiveLinkSubjectSettings);
 
     if (SubjectSettings)
     {
@@ -52,8 +54,44 @@ void FMoSysLiveLinkSerialSource::OnSubjectCreated(FLiveLinkSubjectKey SubjectKey
             OccupiedPorts.Add(SubjectSettings->ComPortNum);
         }
         StartWorker(SubjectKey.SubjectName, FString::FromInt(SubjectSettings->ComPortNum));
-        SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(EMoSysTrackingStatus::Waiting);
+        SubjectSettings->TrackingStatus = MoSysTrackingConversions::UEnum2TrackingStatusString(
+            EMoSysTrackingStatus::Waiting);
     }
+}
+
+bool FMoSysLiveLinkSerialSource::StartWorker(const FName& SubjectName, const FString& Parameter)
+{
+    if (!FMoSysLiveLinkSource::StartWorker(SubjectName, Parameter))
+    {
+        return false;
+    }
+
+    auto HandleSubjectFrameCallback = std::bind(&FMoSysLiveLinkSource::HandleSubjectFrame, this, std::placeholders::_1,
+                                                std::placeholders::_2);
+    auto WaitingTrackingStatusCallback = std::bind(&FMoSysLiveLinkSource::SetWaitingTrackingStatus, this,
+                                                   std::placeholders::_1);
+
+    const mosys::networking::SerialEndpointInfo EndpointInfo{TCHAR_TO_UTF8(*("COM" + Parameter))};
+    TSharedPtr<IMoSysTrackingReceiver> Receiver = CreateReceiver(SubjectName,
+                                                                 EndpointInfo,
+                                                                 mosys::tracking::Protocol::F4,
+                                                                 HandleSubjectFrameCallback,
+                                                                 WaitingTrackingStatusCallback);
+
+    if (Receiver && Receiver->IsInitialized())
+    {
+        FLiveLinkStaticDataStruct StaticDataStruct =
+            FLiveLinkStaticDataStruct(FLiveLinkMoSysStaticData::StaticStruct());
+        if (LiveLinkClient)
+        {
+            LiveLinkClient->PushSubjectStaticData_AnyThread({Guid, SubjectName}, UMoSysLiveLinkRole::StaticClass(),
+                                                            MoveTemp(StaticDataStruct));
+        }
+        EncounteredReceivers.Add(SubjectName, Receiver);
+        return true;
+    }
+    
+    return false;
 }
 
 void FMoSysLiveLinkSerialSource::CreateSubject(FName SubjectName)
@@ -65,7 +103,7 @@ void FMoSysLiveLinkSerialSource::CreateSubject(FName SubjectName)
         SubjectPreset.Key = SubjectKey;
         SubjectPreset.Role = UMoSysLiveLinkRole::StaticClass();
 
-        UMoSysSerialSubjectSettings *SubjectSettings = NewObject<UMoSysSerialSubjectSettings>();
+        UMoSysSerialSubjectSettings* SubjectSettings = NewObject<UMoSysSerialSubjectSettings>();
         if (SubjectSettings)
         {
             AddPort(SubjectSettings->ComPortNum);
@@ -80,11 +118,11 @@ void FMoSysLiveLinkSerialSource::CreateSubject(FName SubjectName)
     }
 }
 
-void FMoSysLiveLinkSerialSource::RemoveSubject(FName SubjectName)
+void FMoSysLiveLinkSerialSource::RemoveSubject(const FName& SubjectName)
 {
     FMoSysLiveLinkSource::RemoveSubject(SubjectName);
-    auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({ Guid, SubjectName });
-    UMoSysSerialSubjectSettings *SubjectSettings = Cast<UMoSysSerialSubjectSettings>(LiveLinkSubjectSettings);
+    auto LiveLinkSubjectSettings = LiveLinkClient->GetSubjectSettings({Guid, SubjectName});
+    UMoSysSerialSubjectSettings* SubjectSettings = Cast<UMoSysSerialSubjectSettings>(LiveLinkSubjectSettings);
     if (SubjectSettings)
     {
         RemovePort(SubjectSettings->ComPortNum);
