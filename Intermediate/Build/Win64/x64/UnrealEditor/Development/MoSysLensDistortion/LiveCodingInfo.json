@@ -1,0 +1,30 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.MoSysLensDistortion.cpp.obj": [
+			"DistortionEditor.gen.cpp.obj",
+			"DistortionInterpolator.gen.cpp.obj",
+			"FLensSetup.gen.cpp.obj",
+			"LensTweakerFunctionLibrary.gen.cpp.obj",
+			"MoSysLensDistortion.init.gen.cpp.obj",
+			"MoSysLensDistortionComponent.gen.cpp.obj",
+			"MoSysLensDistortionModelHandler.gen.cpp.obj",
+			"MoSysLensDistortionUpdaterComponent.gen.cpp.obj",
+			"MoSysLensDistortUpdatable.gen.cpp.obj",
+			"MoSysLensDistortUpdater.gen.cpp.obj",
+			"MoSysLensModel.gen.cpp.obj",
+			"PerModuleInline.gen.cpp.obj",
+			"DistortionEditor.cpp.obj",
+			"DistortionInterpolator.cpp.obj",
+			"FLensSetup.cpp.obj",
+			"LensTweakerFunctionLibrary.cpp.obj",
+			"MoSysLensDistortion.cpp.obj",
+			"MoSysLensDistortionComponent.cpp.obj",
+			"MoSysLensDistortionModelHandler.cpp.obj",
+			"MoSysLensDistortionUpdaterComponent.cpp.obj",
+			"MoSysLensDistortUpdatable.cpp.obj",
+			"MoSysLensDistortUpdater.cpp.obj",
+			"MoSysLensModel.cpp.obj"
+		]
+	}
+}

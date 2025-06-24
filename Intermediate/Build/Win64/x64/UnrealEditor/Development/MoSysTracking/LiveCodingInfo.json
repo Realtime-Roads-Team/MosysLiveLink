@@ -1,0 +1,41 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.MoSysTracking.cpp.obj": [
+			"MoSysEncoderComponent.gen.cpp.obj",
+			"MoSysLensNDisplayComponent.gen.cpp.obj",
+			"MoSysLiveLinkComponentController.gen.cpp.obj",
+			"MoSysLiveLinkController.gen.cpp.obj",
+			"MoSysLiveLinkFrameInterpolationProcessor.gen.cpp.obj",
+			"MoSysLiveLinkRole.gen.cpp.obj",
+			"MoSysLiveLinkSourceFactory.gen.cpp.obj",
+			"MoSysLiveLinkSourceSettings.gen.cpp.obj",
+			"MoSysLiveLinkSubjectSettings.gen.cpp.obj",
+			"MoSysMoRail.gen.cpp.obj",
+			"MoSysPassiveLiveLinkComponentController.gen.cpp.obj",
+			"MoSysTimecodeWrapper.gen.cpp.obj",
+			"MoSysTracking.init.gen.cpp.obj",
+			"MoSysTrackingTypes.gen.cpp.obj",
+			"PerModuleInline.gen.cpp.obj",
+			"MoRail.cpp.obj",
+			"MoSysEncoderComponent.cpp.obj",
+			"MoSysLensNDisplayComponent.cpp.obj",
+			"MoSysLiveLinkComponentController.cpp.obj",
+			"MoSysLiveLinkController.cpp.obj",
+			"MoSysLiveLinkFrameInterpolationProcessor.cpp.obj",
+			"MoSysLiveLinkRole.cpp.obj",
+			"MoSysLiveLinkSerialSource.cpp.obj",
+			"MoSysLiveLinkSource.cpp.obj",
+			"MoSysLiveLinkSourceFactory.cpp.obj",
+			"MoSysLiveLinkSourceSettings.cpp.obj",
+			"MoSysLiveLinkSubjectSettings.cpp.obj",
+			"MoSysLiveLinkUDPSource.cpp.obj",
+			"MoSysPassiveLiveLinkComponentController.cpp.obj",
+			"MoSysTracking.cpp.obj",
+			"MoSysTrackingReceiver.cpp.obj",
+			"MoSysTrackingReceiverManager.cpp.obj",
+			"SMoSysLiveLinkSourceFactory.cpp.obj",
+			"MoSysTrackingSettingsProvider.cpp.obj"
+		]
+	}
+}

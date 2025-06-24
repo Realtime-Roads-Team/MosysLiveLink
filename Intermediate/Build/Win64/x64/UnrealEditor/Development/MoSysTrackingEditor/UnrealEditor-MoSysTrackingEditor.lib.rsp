@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-MoSysTrackingEditor.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"S:/RealtimeRoads/Intermediate/Build/Win64/x64/RealtimeRoadsEditor/Development/UnrealEd/SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.InclOrderUnreal5_5.h.obj"
+"S:/RealtimeRoads/Plugins/VPToolkit/MosysLiveLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/MoSysTrackingEditor/Module.MoSysTrackingEditor.cpp.obj"
+"S:/RealtimeRoads/Plugins/VPToolkit/MosysLiveLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/MoSysTrackingEditor/Default.rc2.res"
+/OUT:"S:/RealtimeRoads/Plugins/VPToolkit/MosysLiveLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/MoSysTrackingEditor/UnrealEditor-MoSysTrackingEditor.lib"

@@ -1,0 +1,10 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.MoSysTrackingEditor.cpp.obj": [
+			"PerModuleInline.gen.cpp.obj",
+			"MoSysLiveLinkSourceDetails.cpp.obj",
+			"MoSysTrackingEditor.cpp.obj"
+		]
+	}
+}

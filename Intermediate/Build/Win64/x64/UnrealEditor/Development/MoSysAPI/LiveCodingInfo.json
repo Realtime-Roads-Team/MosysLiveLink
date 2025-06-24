@@ -1,0 +1,9 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.MoSysAPI.cpp.obj": [
+			"PerModuleInline.gen.cpp.obj",
+			"MoSysAPIModule.cpp.obj"
+		]
+	}
+}

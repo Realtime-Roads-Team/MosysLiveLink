@@ -1,0 +1,16 @@
+{
+	"OutputFiles": [
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\Module.MoSysLensDistortion.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\DistortionEditor.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\DistortionInterpolator.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\FLensSetup.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\LensTweakerFunctionLibrary.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\MoSysLensDistortion.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\MoSysLensDistortionComponent.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\MoSysLensDistortionModelHandler.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\MoSysLensDistortionUpdaterComponent.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\MoSysLensDistortUpdatable.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\MoSysLensDistortUpdater.cpp.obj",
+		"..\\..\\..\\x64\\UnrealGame\\Shipping\\MoSysLensDistortion\\MoSysLensModel.cpp.obj"
+	]
+}
